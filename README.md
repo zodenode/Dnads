@@ -20,6 +20,10 @@ Open [http://localhost:3000](http://localhost:3000). **User guide (in-app):** [h
 
 Ship as a **Docker** image (`Dockerfile`) with **Next.js standalone** output. Step-by-step for **Railway**, env vars, cron, and volumes: **[DEPLOY.md](./DEPLOY.md)**.
 
+## Multimodal providers (NVIDIA NIM + ASR)
+
+Optional **per-modality** interfaces and **NVIDIA NIM** (OpenAI-compatible chat + image REST on `integrate.api.nvidia.com`) plus OpenAI-compatible **Whisper-style ASR**. See **[docs/MULTIMODAL_PROVIDERS.md](./docs/MULTIMODAL_PROVIDERS.md)** and `GET /api/providers/status` for configured backends.
+
 If you do not have Clerk keys yet, leave `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` unset (or set `NEXT_PUBLIC_CLERK_DISABLED=1`): middleware and provider run in a **local bypass** mode so the landing page and `/results` still load. Use real `pk_test_` / `pk_live_` keys in deployed environments.
 
 ## Landing page (`/`)
