@@ -8,6 +8,8 @@ export const demoReport: GrowthReportData = {
     competitorIntensity: 'High',
     opportunityLevel: 'medium',
     dominantStrategy: 'Pain + Speed Claims',
+    saturationNotes:
+      'Paid social is crowded on urgency + demo CTAs; lifecycle and partner channels show lower creative parity.',
     weakGap: 'Status / Identity Positioning',
     confidence: 0.79,
     reasonSignals: [
@@ -35,7 +37,10 @@ export const demoReport: GrowthReportData = {
       saturationLevel: 'High in paid social; lower in lifecycle email.',
       usageRecommendation:
         'Pair with proof of speed; avoid pure fear without a credible mitigation path.',
+      underusedOpportunity:
+        'Peer proof in niche verticals (e.g. finance ops) is still thin vs horizontal SaaS.',
       colorKey: 'rose',
+      reasonSignals: [{ label: 'Corpus', detail: '67% of sampled winners open with loss framing.' }],
     },
     {
       id: 'a2',
@@ -50,7 +55,10 @@ export const demoReport: GrowthReportData = {
       saturationLevel: 'Moderate; strongest on search and review sites.',
       usageRecommendation:
         'Use when intent is mid-funnel; keep claims narrow and defensible.',
+      underusedOpportunity:
+        'Short-form video with primary-source stats (not logos) is under-tested vs static comparison grids.',
       colorKey: 'indigo',
+      reasonSignals: [{ label: 'Intent', detail: 'Strongest where evaluation mode is already active.' }],
     },
     {
       id: 'a3',
@@ -64,17 +72,21 @@ export const demoReport: GrowthReportData = {
       psychologicalFraming: 'Cognitive ease + endowment of existing habits',
       saturationLevel: 'Rising in demo-led channels.',
       usageRecommendation: 'Lead with a named workflow, not generic automation.',
+      underusedOpportunity:
+        'Ops-led creative that names a single recurring artifact outperforms generic “save time” hooks.',
       colorKey: 'emerald',
+      reasonSignals: [{ label: 'Channel', detail: 'Rising share in demo-led programs vs last quarter.' }],
     },
   ],
   competitors: [
     {
       id: 'c1',
       name: 'Brand A',
-      spendBand: 'High',
+      spendBand: 'high',
       confidence: 0.87,
       dominantAngle: 'Urgency',
       trend: 'up',
+      reasonSignals: [{ label: 'Spend proxy', detail: 'Sustained SOV in category prospecting for 90+ days.' }],
       ads: [
         {
           id: 'c1-ad1',
@@ -91,10 +103,11 @@ export const demoReport: GrowthReportData = {
     {
       id: 'c2',
       name: 'Brand B',
-      spendBand: 'Medium',
+      spendBand: 'medium',
       confidence: 0.74,
       dominantAngle: 'Comparison',
       trend: 'flat',
+      reasonSignals: [{ label: 'Format mix', detail: 'Heavy static + occasional UGC; less video depth.' }],
       ads: [
         {
           id: 'c2-ad1',
