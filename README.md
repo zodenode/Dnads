@@ -14,7 +14,7 @@ npm install
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000). Monitor UI: [http://localhost:3000/monitor](http://localhost:3000/monitor).
+Open [http://localhost:3000](http://localhost:3000). **User guide (in-app):** [http://localhost:3000/guide](http://localhost:3000/guide) — content is loaded from [`USER_GUIDE.md`](./USER_GUIDE.md) at the repo root (edit that file to update the guide). Monitor UI: [http://localhost:3000/monitor](http://localhost:3000/monitor).
 
 ## Authentication & access (Clerk)
 
