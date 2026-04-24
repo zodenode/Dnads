@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
@@ -62,7 +63,8 @@ export default function HomePage() {
           {LOADING_STEPS[stepIndex]}
         </p>
         <p className="mt-2 text-center text-sm text-zinc-500">
-          Competitor signals are simulated when libraries are unavailable — patterns still drive output.
+          Pulling Meta / TikTok / Google transparency when API keys are set; otherwise synthetic fill
+          backs pattern coverage.
         </p>
       </main>
     );
@@ -77,9 +79,14 @@ export default function HomePage() {
         Competitor-driven campaign intelligence
       </h1>
       <p className="mt-4 text-zinc-400">
-        Paste a website URL. We infer the category, simulate market-style competitor ads
-        for pattern extraction, then generate new angles from what is working — not generic
-        copywriting.
+        Paste a URL. We infer competitors, map each to Meta / TikTok / Google query shapes, pull
+        public library rows where configured, aggregate patterns, then generate — built for R&amp;D
+        monitoring workflows.
+      </p>
+      <p className="mt-2 text-sm text-zinc-500">
+        <Link href="/monitor" className="text-cyan-400 hover:text-cyan-300">
+          Continuous monitor jobs →
+        </Link>
       </p>
 
       <form onSubmit={handleSubmit} className="mt-10 space-y-4">

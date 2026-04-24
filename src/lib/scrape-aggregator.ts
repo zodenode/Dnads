@@ -1,0 +1,113 @@
+/**
+ * Fan-out: for each competitor mapping, query Meta / TikTok / Google and merge.
+ */
+
+import type { CompetitorLibraryMapping } from "./types";
+import { fetchGoogleTransparencyAds, isGoogleSerpConfigured } from "./scrapers/google-transparency";
+import { fetchMetaAdsArchive, isMetaConfigured } from "./scrapers/meta-ads";
+import { fetchTikTokAds, isTikTokConfigured } from "./scrapers/tiktok-ads";
+import {
+  googleSerpItemsToAds,
+  metaArchivedToAds,
+  tiktokRowsToAds,
+} from "./scraped-ad-converters";
+import type { Ad } from "./types";
+
+export type ScrapeAggregatorOptions = {
+  metaCountries: string[];
+  tiktokCountry?: string;
+  /** YYYYMMDD */
+  tiktokDateMin: string;
+  tiktokDateMax: string;
+  maxCompetitors?: number;
+  metaMaxPages?: number;
+  metaPerQueryLimit?: number;
+};
+
+function dedupeAds(ads: Ad[]): Ad[] {
+  const seen = new Set<string>();
+  const out: Ad[] = [];
+  for (const a of ads) {
+    const key = a.external_id && a.source
+      ? `${a.source}:${a.external_id}`
+      : `${a.source ?? "x"}:${a.competitor}:${a.text.slice(0, 120)}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push(a);
+  }
+  return out;
+}
+
+function defaultDateRange(): { min: string; max: string } {
+  const end = new Date();
+  const start = new Date();
+  start.setDate(end.getDate() - 30);
+  const fmt = (d: Date) =>
+    `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, "0")}${String(d.getDate()).padStart(2, "0")}`;
+  return { min: fmt(start), max: fmt(end) };
+}
+
+export async function aggregateLibraryAds(
+  mappings: CompetitorLibraryMapping[],
+  opts?: Partial<ScrapeAggregatorOptions>,
+): Promise<{ ads: Ad[]; notes: string[] }> {
+  const notes: string[] = [];
+  const range = defaultDateRange();
+  const metaCountries = opts?.metaCountries?.length ? opts.metaCountries : ["US"];
+  const tiktokDateMin = opts?.tiktokDateMin ?? range.min;
+  const tiktokDateMax = opts?.tiktokDateMax ?? range.max;
+  const maxN = opts?.maxCompetitors ?? 10;
+  const slice = mappings.slice(0, maxN);
+
+  const metaOk = isMetaConfigured();
+  const tikOk = isTikTokConfigured();
+  const googleOk = isGoogleSerpConfigured();
+
+  if (!metaOk) notes.push("Meta: skipped (META_ACCESS_TOKEN unset)");
+  if (!tikOk) notes.push("TikTok: skipped (TIKTOK_CLIENT_KEY/SECRET unset)");
+  if (!googleOk) notes.push("Google: skipped (SERPAPI_API_KEY unset)");
+
+  const all: Ad[] = [];
+
+  for (const m of slice) {
+    const label = m.competitor_name;
+
+    if (metaOk && m.meta?.search_terms?.trim()) {
+      const r = await fetchMetaAdsArchive({
+        search_terms: m.meta.search_terms,
+        search_page_ids: m.meta.search_page_ids,
+        ad_reached_countries: metaCountries,
+        limit: opts?.metaPerQueryLimit ?? 25,
+        max_pages: opts?.metaMaxPages ?? 2,
+      });
+      if (r.error) notes.push(`Meta (${label}): ${r.error}`);
+      all.push(...metaArchivedToAds(r.ads));
+    }
+
+    if (tikOk && (m.tiktok?.search_term?.trim() || m.tiktok?.advertiser_business_ids?.length)) {
+      const r = await fetchTikTokAds({
+        search_term: m.tiktok?.search_term,
+        search_type: m.tiktok?.search_type,
+        country_code: opts?.tiktokCountry || "US",
+        date_min: tiktokDateMin,
+        date_max: tiktokDateMax,
+        max_count: 30,
+        advertiser_business_ids: m.tiktok?.advertiser_business_ids,
+      });
+      if (r.error) notes.push(`TikTok (${label}): ${r.error}`);
+      all.push(...tiktokRowsToAds(r.rows));
+    }
+
+    if (googleOk && (m.google?.search_query || m.google?.domain || m.google?.advertiser_id)) {
+      const r = await fetchGoogleTransparencyAds({
+        q: m.google?.search_query,
+        domain: m.google?.domain,
+        advertiser_id: m.google?.advertiser_id,
+      });
+      if (r.error) notes.push(`Google (${label}): ${r.error}`);
+      all.push(...googleSerpItemsToAds(r.items ?? []));
+    }
+  }
+
+  return { ads: dedupeAds(all), notes };
+}

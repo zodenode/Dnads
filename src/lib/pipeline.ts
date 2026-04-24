@@ -1,14 +1,26 @@
 /**
- * End-to-end orchestration: URL signals → Claude (competitors + simulated ads)
- * → local pattern analysis → Claude (pattern-grounded generation).
+ * URL signals → business (Claude) → per-library competitor mapping (Claude)
+ * → Meta/TikTok/Google fetches → pattern analysis → generation (Claude).
  */
 
+import { inferCompetitorLibraryMappings } from "./competitor-library-intel";
 import { parseAdsFromJson } from "./ad-decomposition";
 import { callClaudeJson } from "./claude";
 import { fetchUrlSignals } from "./competitor-analysis";
 import { parseGeneratedAds, validateGrowthPackShape } from "./generation-engine";
 import { analyzePatterns } from "./pattern-analysis";
-import type { Ad, Business, GrowthPack } from "./types";
+import { aggregateLibraryAds } from "./scrape-aggregator";
+import type { Ad, AdSource, Business, GrowthPack } from "./types";
+
+export type PipelineOptions = {
+  metaCountries?: string[];
+  maxCompetitors?: number;
+};
+
+type Phase1Out = {
+  business: Record<string, unknown>;
+  competitor_ads?: unknown;
+};
 
 type Phase2Out = {
   generated_ads: unknown;
@@ -18,45 +30,49 @@ type Phase2Out = {
   campaign_structure: unknown;
 };
 
-const SYSTEM_PHASE1 = `You are a market intelligence analyst. You do NOT copy real ads from the web. You infer category and competitors from the URL and any fetched page signals, then SIMULATE realistic competitor ad examples that could plausibly run on Meta, TikTok, or Google Ads — clearly fictional but structurally authentic.
+const SYSTEM_PHASE1_BUSINESS = `You are a market intelligence analyst. Infer the business from the URL and optional page signals.
 
-Return ONLY valid JSON (no markdown fences) matching this shape:
+Return ONLY valid JSON (no markdown):
 {
   "business": {
     "url": string,
     "category": string,
     "value_proposition": string[],
     "target_audience": string[],
-    "competitors": string[] (5-10 names),
-    "product_summary": string (optional, 2-4 sentences),
-    "pricing_tiers": string[] (optional, inferred tiers or "unknown")
-  },
-  "competitor_ads": Ad[]
+    "competitors": string[] (6-12 distinct competitor / peer brand names in this category),
+    "product_summary": string (optional),
+    "pricing_tiers": string[] (optional)
+  }
 }
 
-Each Ad must be:
+Competitors should be real-world brand or product names a user would recognize in the category. Do not include ad creative text.`;
+
+const SYSTEM_FILL_SYNTHETIC = `You output ONLY synthetic structured competitor ads for pattern analysis when live library samples are thin. These must be plausible category creatives, not copies of real ads.
+
+Return ONLY valid JSON (no markdown): { "competitor_ads": Ad[] }
+
+Ad shape:
 {
-  "competitor": string (must match one of business.competitors),
-  "hook_type": one of "pain"|"curiosity"|"urgency"|"status"|"comparison",
-  "angle": string (short label, e.g. "speed", "ROI", "risk reversal"),
+  "competitor": string (from the provided competitor list),
+  "hook_type": "pain"|"curiosity"|"urgency"|"status"|"comparison",
+  "angle": string,
   "emotional_trigger": string,
-  "format": string (e.g. "UGC", "testimonial", "static", "video", "carousel"),
+  "format": string,
   "cta": string,
-  "text": string (primary ad body, not a copy of any known brand line),
+  "text": string,
   "audience_target": string (optional),
-  "offer_type": string (optional, e.g. "free trial", "discount", "bundle")
+  "offer_type": string (optional)
 }
 
-Produce at least 18 competitor_ads spread across competitors and hook types. Everything must be derived from plausible market behaviour for the inferred category, not generic motivational copy.`;
+Produce 12-20 ads spread across competitors and hook types.`;
 
-const SYSTEM_PHASE2 = `You are a performance strategist. You receive structured competitor ad simulations and computed market pattern stats. You MUST generate new ads by recombining winning patterns and deliberately exploiting underused gaps — not generic AI copy.
+const SYSTEM_PHASE2 = `You are a performance strategist. You receive structured competitor ad rows (from transparency libraries and/or synthetic fill) plus computed market pattern stats. Generate new ads by recombining winning patterns and underused gaps — not generic copy.
 
 Rules:
-- Reference patterns explicitly in your reasoning only inside JSON fields as short labels where relevant.
-- Output 14-18 generated ad variations grouped into angle clusters (cluster field).
-- Hooks and angles should reflect top patterns AND gap opportunities from the input.
+- Output 14-18 generated ad variations with cluster field for angle grouping.
+- Ground hooks and angles in top_hooks, top_angles, saturation_gaps, winning_patterns.
 
-Return ONLY valid JSON (no markdown fences):
+Return ONLY valid JSON (no markdown):
 {
   "generated_ads": [
     {
@@ -70,17 +86,15 @@ Return ONLY valid JSON (no markdown fences):
   ],
   "landing_headlines": string[] (exactly 3),
   "landing_subcopy": string[] (exactly 3),
-  "ugc_script_ideas": string[] (exactly 5, short-form video beats, bullet style ok),
+  "ugc_script_ideas": string[] (exactly 5),
   "campaign_structure": [
     { "name": string, "objective": string, "notes": string (optional) }
-  ] (5-8 items, Meta/TikTok style campaign naming)
+  ] (5-8 items)
 }`;
 
 function buildPhase1User(signals: Awaited<ReturnType<typeof fetchUrlSignals>>) {
   return `URL and page signals (may be partial if fetch failed):
-${JSON.stringify(signals, null, 2)}
-
-Infer the business, list 5-10 closest competitors by category + keywords, then output competitor_ads as specified.`;
+${JSON.stringify(signals, null, 2)}`;
 }
 
 function buildPhase2User(
@@ -91,13 +105,13 @@ function buildPhase2User(
   return `Business:
 ${JSON.stringify(business, null, 2)}
 
-Competitor ad samples (simulated for R&D — do not treat as real scraped ads):
+Competitor ad rows (library + optional synthetic; treat as R&D dataset):
 ${JSON.stringify(ads, null, 2)}
 
-Computed market pattern analysis (authoritative — base generation on this):
+Computed market pattern analysis (authoritative):
 ${marketJson}
 
-Generate the campaign pack JSON. Ensure generated_ads are visibly informed by top_hooks, top_angles, saturation_gaps, and winning_patterns.`;
+Generate the campaign pack JSON.`;
 }
 
 function coerceBusiness(raw: Record<string, unknown>, url: string): Business {
@@ -122,20 +136,68 @@ function coerceBusiness(raw: Record<string, unknown>, url: string): Business {
   };
 }
 
-export async function runPipeline(inputUrl: string): Promise<GrowthPack> {
+function countBySource(ads: Ad[]): {
+  meta_count: number;
+  tiktok_count: number;
+  google_count: number;
+  synthetic_count: number;
+} {
+  const c = { meta: 0, tiktok: 0, google: 0, synthetic: 0 };
+  for (const a of ads) {
+    const s = (a.source ?? "synthetic") as AdSource;
+    if (s === "meta") c.meta += 1;
+    else if (s === "tiktok") c.tiktok += 1;
+    else if (s === "google") c.google += 1;
+    else c.synthetic += 1;
+  }
+  return {
+    meta_count: c.meta,
+    tiktok_count: c.tiktok,
+    google_count: c.google,
+    synthetic_count: c.synthetic,
+  };
+}
+
+export async function runPipeline(
+  inputUrl: string,
+  options?: PipelineOptions,
+): Promise<GrowthPack> {
   const signals = await fetchUrlSignals(inputUrl.trim());
-  const phase1 = await callClaudeJson<Record<string, unknown>>(SYSTEM_PHASE1, buildPhase1User(signals));
+  const phase1 = await callClaudeJson<Phase1Out>(SYSTEM_PHASE1_BUSINESS, buildPhase1User(signals));
 
   const business = coerceBusiness(
     (phase1.business as Record<string, unknown>) ?? {},
     signals.url,
   );
-  const rawAds = phase1.competitor_ads;
-  const competitorList = business.competitors[0] ?? "Competitor";
-  const competitor_ads = parseAdsFromJson(
-    Array.isArray(rawAds) ? rawAds : [],
-    competitorList,
-  );
+
+  const intel = await inferCompetitorLibraryMappings({
+    url: business.url,
+    category: business.category,
+    competitors: business.competitors,
+    value_proposition: business.value_proposition,
+    target_audience: business.target_audience,
+    product_summary: business.product_summary,
+  });
+
+  const { ads: scraped, notes } = await aggregateLibraryAds(intel.mappings, {
+    metaCountries: options?.metaCountries ?? ["US"],
+    maxCompetitors: options?.maxCompetitors ?? 10,
+  });
+
+  let competitor_ads = scraped;
+  const minScraped = 8;
+  if (competitor_ads.length < minScraped) {
+    const fill = await callClaudeJson<Record<string, unknown>>(
+      SYSTEM_FILL_SYNTHETIC,
+      `Business:\n${JSON.stringify(business, null, 2)}\n\nLibrary scrape returned ${competitor_ads.length} rows. Add structured competitor_ads to reach strong pattern coverage.`,
+    );
+    const rawFill = fill.competitor_ads;
+    const synth = parseAdsFromJson(
+      Array.isArray(rawFill) ? rawFill : [],
+      business.competitors[0] ?? "Competitor",
+    ).map((a) => ({ ...a, source: "synthetic" as const }));
+    competitor_ads = [...competitor_ads, ...synth];
+  }
 
   const market = analyzePatterns(competitor_ads);
 
@@ -164,9 +226,17 @@ export async function runPipeline(inputUrl: string): Promise<GrowthPack> {
         }))
     : [];
 
+  const provenance = countBySource(competitor_ads);
+  const extraNotes = [...notes];
+  if (intel.rationale) extraNotes.push(`Mapping: ${intel.rationale}`);
+
   const pack: GrowthPack = {
     business,
     competitor_ads,
+    ad_provenance: {
+      ...provenance,
+      notes: extraNotes.length ? extraNotes : undefined,
+    },
     market,
     generated_ads,
     landing_headlines: landing_headlines.slice(0, 3),
