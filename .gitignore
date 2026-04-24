@@ -35,5 +35,8 @@ yarn-error.log*
 # local job store
 /data/
 
+# local tunnel binary (downloaded in dev)
+cloudflared
+
 # clerk configuration (can include secrets)
 /.clerk/
