@@ -54,6 +54,7 @@ const FREE_HOOK_ANGLE_ROWS = 2;
 export function slicePackForFreePreview(pack: GrowthPack): GrowthPack {
   return {
     ...pack,
+    ad_provenance: pack.ad_provenance,
     generated_ads: pack.generated_ads.slice(0, FREE_AD_PREVIEW),
     competitor_ads: [],
     market: {
