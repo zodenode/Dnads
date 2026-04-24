@@ -2,10 +2,11 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useGameOfLife } from "@/hooks/useGameOfLife";
 import { GridRenderer } from "@/components/landing/grid-renderer";
 import { SimulationOverlay } from "@/components/landing/simulation-overlay";
+import { LandingIndustryShowcase } from "@/components/landing/landing-industry-showcase";
 
 const LOADING_LINES = [
   "binding competitive signals…",
@@ -15,6 +16,7 @@ const LOADING_LINES = [
 
 export function LandingPage() {
   const router = useRouter();
+  const formRef = useRef<HTMLElement>(null);
   const [url, setUrl] = useState("");
   const [metaCountries, setMetaCountries] = useState("US");
   const [maxCompetitors, setMaxCompetitors] = useState(10);
@@ -23,8 +25,14 @@ export function LandingPage() {
   const [loading, setLoading] = useState(false);
   const [loadLine, setLoadLine] = useState(0);
 
-  /* No timed boot overlay — mobile / tunnel browsers often throttle timers and trap users on "> starting…" */
   const { grid, tickIndex, density, solidBlocks, lastBirths } = useGameOfLife(true);
+
+  const prefillDemo = useCallback((demoUrl: string) => {
+    setUrl(demoUrl);
+    window.setTimeout(() => {
+      formRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 50);
+  }, []);
 
   useEffect(() => {
     if (!loading) return;
@@ -104,29 +112,50 @@ export function LandingPage() {
           active
         />
 
-        <div className="relative z-10 mx-auto flex min-h-[calc(100vh-3.25rem)] max-w-3xl flex-col px-6 pb-16 pt-12 sm:pt-16">
+        <div className="relative z-10 mx-auto flex min-h-[calc(100vh-3.25rem)] max-w-4xl flex-col px-6 pb-20 pt-10 sm:pt-14">
           <header className="text-center animate-dnads-fade-in-delay-1">
-            <h1 className="text-3xl font-normal tracking-[0.12em] text-[#e8e8e8] sm:text-4xl">dnads</h1>
-            <p className="mx-auto mt-4 max-w-xl text-[13px] leading-relaxed text-[#8a8a8a] sm:text-sm">
-              adaptive advertising under competitive selection pressure
+            <p className="text-[10px] font-normal uppercase tracking-[0.2em] text-[#6a6a6a]">
+              competitor-driven growth intelligence
             </p>
-            <p className="mx-auto mt-2 max-w-md text-[11px] leading-relaxed text-[#5c5c5c]">
-              ads evolve through survival in competitive markets
+            <h1 className="mt-3 text-3xl font-normal tracking-[0.12em] text-[#e8e8e8] sm:text-4xl">dnads</h1>
+            <p className="mx-auto mt-4 max-w-2xl text-[14px] leading-relaxed text-[#9a9a9a] sm:text-[15px]">
+              Paste your site. We map <span className="text-[#c4c4c4]">who is actually winning</span> in your category — Meta, TikTok, and Google transparency signals — then ship angles, hooks, and a campaign pack your team can brief against.
+            </p>
+            <p className="mx-auto mt-3 max-w-xl text-[11px] leading-relaxed text-[#5c5c5c]">
+              For growth, performance, and brand leads who live in ad libraries — not generic AI copy dumps.
             </p>
           </header>
 
-          <section className="mt-14 animate-dnads-fade-in-delay-2">
-            <form onSubmit={handleSubmit} className="mx-auto max-w-lg border border-[#2a2a2e] bg-[#0b0c0f]/85 p-5 backdrop-blur-sm sm:p-6">
-              <label className="block text-[10px] font-normal uppercase tracking-[0.18em] text-[#6a6a6a]">
-                target url
+          <ul className="mx-auto mt-8 flex max-w-2xl flex-wrap justify-center gap-x-6 gap-y-2 text-[10px] uppercase tracking-[0.12em] text-[#6a6a6a] animate-dnads-fade-in-delay-1">
+            <li className="text-[#8a8a8a]">pattern extraction</li>
+            <li className="text-[#5c5c5c]">·</li>
+            <li className="text-[#8a8a8a]">gap & saturation read</li>
+            <li className="text-[#5c5c5c]">·</li>
+            <li className="text-[#8a8a8a]">pack export</li>
+            <li className="text-[#5c5c5c]">·</li>
+            <li className="text-[#8a8a8a]">monitor jobs</li>
+          </ul>
+
+          <LandingIndustryShowcase onPickDemoUrl={prefillDemo} />
+
+          <section ref={formRef} className="mt-12 scroll-mt-24 animate-dnads-fade-in-delay-2">
+            <form
+              onSubmit={handleSubmit}
+              className="mx-auto max-w-lg border border-[#2a2a2e] bg-[#0b0c0f]/90 p-5 shadow-[0_0_0_1px_rgba(255,255,255,0.03)] backdrop-blur-sm sm:p-6"
+            >
+              <p className="text-[10px] font-normal uppercase tracking-[0.18em] text-[#8a8a8a]">
+                run on your property
+              </p>
+              <label className="mt-3 block text-[10px] font-normal uppercase tracking-[0.14em] text-[#6a6a6a]">
+                your product or competitor URL
                 <input
                   type="url"
                   name="url"
-                  placeholder="https://"
+                  placeholder="https://yoursite.com"
                   value={url}
                   onChange={(e) => setUrl(e.target.value)}
                   disabled={loading}
-                  className="mt-3 w-full border border-[#2a2a2e] bg-[#121318] px-3 py-3 text-sm text-[#e0e0e0] outline-none transition-colors placeholder:text-[#4a4a4e] focus:border-[#3d3d44] disabled:opacity-50"
+                  className="mt-3 w-full border border-[#2a2a2e] bg-[#121318] px-3 py-3.5 text-sm text-[#e0e0e0] outline-none transition-colors placeholder:text-[#4a4a4e] focus:border-[#4a4a52] disabled:opacity-50"
                 />
               </label>
               {error ? (
@@ -141,7 +170,7 @@ export function LandingPage() {
                 className="mt-4 w-full border border-dashed border-[#2a2a2e] py-2 text-[10px] font-normal uppercase tracking-[0.14em] text-[#6a6a6a] transition-colors hover:border-[#3d3d44] hover:text-[#8a8a8a]"
                 aria-expanded={showAdvanced}
               >
-                {showAdvanced ? "hide query parameters" : "show query parameters (meta region · depth)"}
+                {showAdvanced ? "hide query parameters" : "advanced: meta region · competitor depth"}
               </button>
 
               {showAdvanced ? (
@@ -172,10 +201,13 @@ export function LandingPage() {
               <button
                 type="submit"
                 disabled={loading}
-                className="mt-5 w-full border border-[#3d3d44] bg-[#16171c] py-3 text-[11px] font-normal uppercase tracking-[0.14em] text-[#b0b0b0] transition-colors hover:border-[#52525a] hover:bg-[#1a1b22] hover:text-[#d4d4d4] disabled:opacity-50"
+                className="mt-6 w-full border border-[#4a4a52] bg-[#1c1d24] py-3.5 text-[11px] font-normal uppercase tracking-[0.16em] text-[#e0e0e0] transition-colors hover:border-[#6a6a72] hover:bg-[#22232c] disabled:opacity-50"
               >
-                initialize evolution cycle
+                generate growth pack — free to run
               </button>
+              <p className="mt-3 text-center text-[10px] leading-relaxed text-[#5c5c5c]">
+                Full competitor breakdowns and export may require sign-in / plan — see results after run.
+              </p>
             </form>
           </section>
 
@@ -200,35 +232,34 @@ export function LandingPage() {
             </div>
           </section>
 
-          <section className="mx-auto mt-10 grid w-full max-w-3xl gap-3 sm:grid-cols-3 animate-dnads-fade-in-delay-4">
+          <section className="mx-auto mt-10 grid w-full max-w-4xl gap-3 sm:grid-cols-3 animate-dnads-fade-in-delay-4">
             <article className="border border-[#2a2a2e] bg-[#0b0c0f]/75 p-4">
               <h2 className="text-[10px] font-normal uppercase tracking-[0.16em] text-[#8a8a8a]">
-                market simulation
+                what you get
               </h2>
               <p className="mt-2 text-[11px] leading-relaxed text-[#6a6a6a]">
-                Competitive space as a dynamic grid — strategies appear, spread, and collapse under pressure.
+                Competitor set, library-style ad rows where APIs allow, hook/angle mix, gaps, and net-new angles grounded in those patterns — not a blank chat prompt.
               </p>
             </article>
             <article className="border border-[#2a2a2e] bg-[#0b0c0f]/75 p-4">
               <h2 className="text-[10px] font-normal uppercase tracking-[0.16em] text-[#8a8a8a]">
-                selection pressure
+                {"who it's for"}
               </h2>
               <p className="mt-2 text-[11px] leading-relaxed text-[#6a6a6a]">
-                Only configurations that persist under local rules survive — a stand-in for market selection.
+                Growth and performance marketers, agency strategists, and founders who brief creative from market behaviour — not from vibes.
               </p>
             </article>
             <article className="border border-[#2a2a2e] bg-[#0b0c0f]/75 p-4">
               <h2 className="text-[10px] font-normal uppercase tracking-[0.16em] text-[#8a8a8a]">
-                mutation engine
+                why the grid
               </h2>
               <p className="mt-2 text-[11px] leading-relaxed text-[#6a6a6a]">
-                Sparse births and dense clusters model where new creative forms might emerge or stall.
+                A live metaphor: crowded cells, births, and collapse — same idea as creative surviving in a noisy feed.
               </p>
             </article>
           </section>
         </div>
       </main>
-
     </>
   );
 }
