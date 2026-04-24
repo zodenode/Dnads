@@ -34,3 +34,6 @@ yarn-error.log*
 
 # local job store
 /data/
+
+# clerk configuration (can include secrets)
+/.clerk/

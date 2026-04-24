@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { SignInButton, useAuth, UserButton } from "@clerk/nextjs";
 
-export function SiteHeader() {
+function SiteHeaderClerk() {
   const { isSignedIn, isLoaded } = useAuth();
 
   return (
@@ -34,4 +34,25 @@ export function SiteHeader() {
       </div>
     </header>
   );
+}
+
+function SiteHeaderLocal() {
+  return (
+    <header className="border-b border-[#1e1f24] bg-[#0b0c0f]/90 font-mono backdrop-blur-sm">
+      <div className="mx-auto flex max-w-5xl items-center justify-between gap-4 px-4 py-3 sm:px-6">
+        <Link
+          href="/"
+          className="text-xs font-normal uppercase tracking-[0.14em] text-[#9a9a9a] transition-colors hover:text-[#c4c4c4]"
+        >
+          dnads
+        </Link>
+        <span className="text-[10px] uppercase tracking-[0.12em] text-[#5c5c5c]">local · no clerk keys</span>
+      </div>
+    </header>
+  );
+}
+
+export function SiteHeader({ clerkActive = true }: { clerkActive?: boolean }) {
+  if (!clerkActive) return <SiteHeaderLocal />;
+  return <SiteHeaderClerk />;
 }

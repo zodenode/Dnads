@@ -1,11 +1,16 @@
 import { clerkMiddleware } from "@clerk/nextjs/server";
+import { NextResponse } from "next/server";
+import { isClerkMiddlewareEnabled } from "@/lib/clerk-config";
 
 /**
- * Clerk session refresh for all matched routes.
- * Routes stay reachable without login so users complete the taste experience;
- * depth is gated in UI (see results page), not at generation.
+ * When Clerk keys are not configured, skip auth middleware so the app runs locally.
+ * With real pk_test_/pk_live_ keys, sessions refresh on matched routes.
  */
-export default clerkMiddleware();
+export default isClerkMiddlewareEnabled()
+  ? clerkMiddleware()
+  : function passthrough() {
+      return NextResponse.next();
+    };
 
 export const config = {
   matcher: [

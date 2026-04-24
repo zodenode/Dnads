@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { ClerkProvider } from "@clerk/nextjs";
 import { Geist, Geist_Mono } from "next/font/google";
 import { SiteHeader } from "@/components/site-header";
+import { useClerkProviderBypass } from "@/lib/clerk-config";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -25,14 +26,16 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const bypassClerk = useClerkProviderBypass();
+
   return (
-    <ClerkProvider>
+    <ClerkProvider __internal_bypassMissingPublishableKey={bypassClerk}>
       <html lang="en">
         <body
           className={`${geistSans.variable} ${geistMono.variable} min-h-screen antialiased`}
         >
           <div className="flex min-h-screen flex-col">
-            <SiteHeader />
+            <SiteHeader clerkActive={!bypassClerk} />
             <div className="flex-1">{children}</div>
           </div>
         </body>

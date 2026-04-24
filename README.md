@@ -16,6 +16,8 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000). Monitor UI: [http://localhost:3000/monitor](http://localhost:3000/monitor).
 
+If you do not have Clerk keys yet, leave `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` unset (or set `NEXT_PUBLIC_CLERK_DISABLED=1`): middleware and provider run in a **local bypass** mode so the landing page and `/results` still load. Use real `pk_test_` / `pk_live_` keys in deployed environments.
+
 ## Landing page (`/`)
 
 - Monochrome, monospace **system** presentation for **dnads** with terminal boot, Conway’s Game of Life **background** (40×25, ~800–1200ms ticks, `▣` / `░`, low opacity), optional **symbolic** simulation captions, URL field, status strip, and three metaphor cards.
