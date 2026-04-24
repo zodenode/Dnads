@@ -23,6 +23,12 @@ export function normalizeAd(raw: Record<string, unknown>, fallbackCompetitor: st
     hook_type = "curiosity";
   }
 
+  const source =
+    raw.source === "meta" || raw.source === "tiktok" || raw.source === "google" || raw.source === "synthetic"
+      ? raw.source
+      : undefined;
+  const external_id = raw.external_id != null ? coerceString(raw.external_id) : undefined;
+
   return {
     competitor,
     hook_type,
@@ -33,6 +39,8 @@ export function normalizeAd(raw: Record<string, unknown>, fallbackCompetitor: st
     text: coerceString(raw.text, ""),
     audience_target: raw.audience_target != null ? coerceString(raw.audience_target) : undefined,
     offer_type: raw.offer_type != null ? coerceString(raw.offer_type) : undefined,
+    ...(source ? { source } : {}),
+    ...(external_id ? { external_id } : {}),
   };
 }
 

@@ -86,12 +86,20 @@ export default function ResultsPage() {
           </h1>
           <p className="text-sm text-zinc-500">{pack.business.category}</p>
         </div>
-        <Link
-          href="/"
-          className="text-sm text-zinc-400 underline-offset-4 hover:text-cyan-400 hover:underline"
-        >
-          New URL
-        </Link>
+        <div className="flex flex-wrap gap-4">
+          <Link
+            href="/monitor"
+            className="text-sm text-zinc-400 underline-offset-4 hover:text-cyan-400 hover:underline"
+          >
+            Monitor jobs
+          </Link>
+          <Link
+            href="/"
+            className="text-sm text-zinc-400 underline-offset-4 hover:text-cyan-400 hover:underline"
+          >
+            New URL
+          </Link>
+        </div>
       </div>
 
       <nav className="mt-8 flex flex-wrap gap-2 border-b border-zinc-800 pb-2">
@@ -156,6 +164,23 @@ export default function ResultsPage() {
                 </ul>
               </div>
             )}
+            {pack.ad_provenance && (
+              <div className="rounded-lg border border-zinc-800 bg-zinc-900/40 p-4">
+                <h2 className="text-sm font-semibold text-zinc-100">Ad library mix</h2>
+                <p className="mt-2 text-sm text-zinc-400">
+                  Meta: {pack.ad_provenance.meta_count} · TikTok:{" "}
+                  {pack.ad_provenance.tiktok_count} · Google: {pack.ad_provenance.google_count} ·
+                  Synthetic fill: {pack.ad_provenance.synthetic_count}
+                </p>
+                {pack.ad_provenance.notes && pack.ad_provenance.notes.length > 0 && (
+                  <ul className="mt-2 list-inside list-disc text-xs text-zinc-500">
+                    {pack.ad_provenance.notes.map((n) => (
+                      <li key={n}>{n}</li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            )}
           </section>
         )}
 
@@ -177,8 +202,8 @@ export default function ResultsPage() {
               </ul>
             </div>
             <p className="text-xs text-zinc-500">
-              Ads below are structured simulations for R&amp;D — not copied from ad libraries.
-              Schema: hook type, angle, trigger, format, CTA.
+              Rows below combine public library fetches (when keys are configured) with synthetic
+              structured ads when coverage is thin. Schema: hook type, angle, trigger, format, CTA.
             </p>
             <div className="space-y-3">
               {pack.competitor_ads.map((ad, i) => (
@@ -190,6 +215,11 @@ export default function ResultsPage() {
                     <span className="font-medium text-cyan-400/90">
                       {ad.competitor}
                     </span>
+                    {ad.source ? (
+                      <span className="rounded bg-zinc-800 px-1.5 py-0.5 text-[10px] uppercase text-zinc-400">
+                        {ad.source}
+                      </span>
+                    ) : null}
                     <span>· {ad.hook_type}</span>
                     <span>· {ad.format}</span>
                   </div>
