@@ -14,7 +14,7 @@ npm install
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000). Monitor UI: [http://localhost:3000/monitor](http://localhost:3000/monitor).
+Open [http://localhost:3000](http://localhost:3000). **User guide (in-app):** [http://localhost:3000/guide](http://localhost:3000/guide) — content is loaded from [`USER_GUIDE.md`](./USER_GUIDE.md) at the repo root (edit that file to update the guide). Monitor UI: [http://localhost:3000/monitor](http://localhost:3000/monitor).
 
 If you do not have Clerk keys yet, leave `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` unset (or set `NEXT_PUBLIC_CLERK_DISABLED=1`): middleware and provider run in a **local bypass** mode so the landing page and `/results` still load. Use real `pk_test_` / `pk_live_` keys in deployed environments.
 

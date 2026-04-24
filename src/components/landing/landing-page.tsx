@@ -18,6 +18,9 @@ export function LandingPage() {
   const router = useRouter();
   const [bootDone, setBootDone] = useState(false);
   const [url, setUrl] = useState("");
+  const [metaCountries, setMetaCountries] = useState("US");
+  const [maxCompetitors, setMaxCompetitors] = useState(10);
+  const [showAdvanced, setShowAdvanced] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [loadLine, setLoadLine] = useState(0);
@@ -43,11 +46,19 @@ export function LandingPage() {
       }
       setLoading(true);
       setLoadLine(0);
+      const countries = metaCountries
+        .split(",")
+        .map((s) => s.trim().toUpperCase())
+        .filter(Boolean);
       try {
         const res = await fetch("/api/generate", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ url: trimmed }),
+          body: JSON.stringify({
+            url: trimmed,
+            ...(countries.length ? { meta_countries: countries } : {}),
+            max_competitors: Math.min(20, Math.max(1, maxCompetitors)),
+          }),
         });
         const data = await res.json();
         if (!res.ok) {
@@ -62,7 +73,7 @@ export function LandingPage() {
         setLoadLine(0);
       }
     },
-    [url, router],
+    [url, router, metaCountries, maxCompetitors],
   );
 
   if (loading) {
@@ -127,6 +138,41 @@ export function LandingPage() {
                   {error}
                 </p>
               ) : null}
+
+              <button
+                type="button"
+                onClick={() => setShowAdvanced((v) => !v)}
+                className="mt-4 w-full border border-dashed border-[#2a2a2e] py-2 text-[10px] font-normal uppercase tracking-[0.14em] text-[#6a6a6a] transition-colors hover:border-[#3d3d44] hover:text-[#8a8a8a]"
+                aria-expanded={showAdvanced}
+              >
+                {showAdvanced ? "hide query parameters" : "show query parameters (meta region · depth)"}
+              </button>
+
+              {showAdvanced ? (
+                <div className="mt-4 grid gap-3 border-t border-[#2a2a2e] pt-4 sm:grid-cols-2">
+                  <label className="block text-[10px] font-normal uppercase tracking-[0.14em] text-[#6a6a6a]">
+                    meta countries (iso, comma)
+                    <input
+                      value={metaCountries}
+                      onChange={(e) => setMetaCountries(e.target.value)}
+                      placeholder="US,GB"
+                      className="mt-2 w-full border border-[#2a2a2e] bg-[#121318] px-2 py-2 font-mono text-[11px] text-[#c4c4c4] outline-none focus:border-[#3d3d44]"
+                    />
+                  </label>
+                  <label className="block text-[10px] font-normal uppercase tracking-[0.14em] text-[#6a6a6a]">
+                    max competitors (1–20)
+                    <input
+                      type="number"
+                      min={1}
+                      max={20}
+                      value={maxCompetitors}
+                      onChange={(e) => setMaxCompetitors(Number(e.target.value) || 10)}
+                      className="mt-2 w-full border border-[#2a2a2e] bg-[#121318] px-2 py-2 text-[11px] text-[#c4c4c4] outline-none focus:border-[#3d3d44]"
+                    />
+                  </label>
+                </div>
+              ) : null}
+
               <button
                 type="submit"
                 disabled={loading}
@@ -147,6 +193,12 @@ export function LandingPage() {
                 {">"}{" "}
                 <Link href="/monitor" className="text-[#7a7a7a] underline-offset-2 hover:text-[#a0a0a0]">
                   continuous monitor jobs
+                </Link>
+              </p>
+              <p className="mt-2 text-[#5c5c5c]">
+                {">"}{" "}
+                <Link href="/guide" className="text-[#7a7a7a] underline-offset-2 hover:text-[#a0a0a0]">
+                  user guide (USER_GUIDE.md)
                 </Link>
               </p>
             </div>
