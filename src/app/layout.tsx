@@ -15,8 +15,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "URL → Growth Intelligence",
-  description: "Competitor-driven marketing intelligence from a single URL",
+  title: "dnads — adaptive advertising intelligence",
+  description:
+    "Simulated evolutionary system for advertising intelligence — selection pressure, mutation, market resolution.",
 };
 
 export default function RootLayout({

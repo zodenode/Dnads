@@ -16,6 +16,11 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000). Monitor UI: [http://localhost:3000/monitor](http://localhost:3000/monitor).
 
+## Landing page (`/`)
+
+- Monochrome, monospace **system** presentation for **dnads** with terminal boot, Conway’s Game of Life **background** (40×25, ~800–1200ms ticks, `▣` / `░`, low opacity), optional **symbolic** simulation captions, URL field, status strip, and three metaphor cards.
+- **Initialize evolution cycle** runs the existing `POST /api/generate` flow and navigates to **`/results`** with the pack in `sessionStorage` (unchanged integration).
+
 ## Authentication & access (Clerk)
 
 - **Clerk** handles sign-in (modal from the header, or `/sign-in` / `/sign-up`). Middleware refreshes sessions on navigations; **generation is not blocked** — users complete a taste experience first.
