@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useGameOfLife } from "@/hooks/useGameOfLife";
 import { BootSequence } from "@/components/landing/boot-sequence";
 import { GridRenderer } from "@/components/landing/grid-renderer";
@@ -17,6 +17,7 @@ const LOADING_LINES = [
 export function LandingPage() {
   const router = useRouter();
   const [bootDone, setBootDone] = useState(false);
+  const finishBoot = useMemo(() => () => setBootDone(true), []);
   const [url, setUrl] = useState("");
   const [metaCountries, setMetaCountries] = useState("US");
   const [maxCompetitors, setMaxCompetitors] = useState(10);
@@ -90,7 +91,7 @@ export function LandingPage() {
 
   return (
     <>
-      {!bootDone ? <BootSequence onComplete={() => setBootDone(true)} /> : null}
+      {!bootDone ? <BootSequence onComplete={finishBoot} /> : null}
 
       <main className="relative min-h-[calc(100vh-3.25rem)] overflow-hidden bg-[#0b0c0f] font-mono text-[#c4c4c4]">
         <div className="pointer-events-none absolute inset-0 flex items-center justify-center overflow-hidden pt-16">

@@ -27,7 +27,7 @@ export function GridRenderer({ grid, className = "" }: Props) {
   const text = gridToAscii(grid);
   return (
     <pre
-      className={`pointer-events-none select-none whitespace-pre font-mono text-[0.55rem] leading-none tracking-tighter text-[#6b6b6b] opacity-[0.18] sm:text-[0.62rem] md:text-[0.68rem] ${className}`}
+      className={`pointer-events-none select-none whitespace-pre font-mono text-[0.55rem] leading-none tracking-tighter text-[#7a7a7a] opacity-[0.28] sm:text-[0.62rem] md:text-[0.68rem] ${className}`}
       aria-hidden
     >
       {text}

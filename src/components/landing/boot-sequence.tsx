@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 const LINES = [
   "initializing dnads...",
@@ -17,19 +17,31 @@ type Props = {
 export function BootSequence({ onComplete }: Props) {
   const [visibleCount, setVisibleCount] = useState(0);
   const [fadeOut, setFadeOut] = useState(false);
+  const onCompleteRef = useRef(onComplete);
 
   useEffect(() => {
+    onCompleteRef.current = onComplete;
+  }, [onComplete]);
+
+  useEffect(() => {
+    const done = () => {
+      setFadeOut(true);
+      window.setTimeout(() => onCompleteRef.current(), 600);
+    };
+
     if (visibleCount >= LINES.length) {
-      const t = window.setTimeout(() => {
-        setFadeOut(true);
-        window.setTimeout(onComplete, 600);
-      }, 380);
+      const t = window.setTimeout(done, 380);
       return () => clearTimeout(t);
     }
     const delay = visibleCount === 0 ? 120 : 220 + Math.random() * 180;
     const id = window.setTimeout(() => setVisibleCount((c) => c + 1), delay);
-    return () => clearTimeout(id);
-  }, [visibleCount, onComplete]);
+    return () => window.clearTimeout(id);
+  }, [visibleCount]);
+
+  useEffect(() => {
+    const max = window.setTimeout(() => onCompleteRef.current(), 6000);
+    return () => clearTimeout(max);
+  }, []);
 
   return (
     <div
@@ -39,6 +51,11 @@ export function BootSequence({ onComplete }: Props) {
       aria-live="polite"
     >
       <div className="font-mono text-xs leading-relaxed text-[#9a9a9a] sm:text-sm">
+        {visibleCount === 0 ? (
+          <p className="text-[#6a6a6a]">
+            {">"} starting…
+          </p>
+        ) : null}
         {LINES.slice(0, visibleCount).map((line, i) => (
           <p key={line} className={i === visibleCount - 1 ? "text-[#c4c4c4]" : "text-[#6a6a6a]"}>
             {">"} {line}
