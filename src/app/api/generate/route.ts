@@ -30,7 +30,12 @@ export async function POST(req: Request) {
     return NextResponse.json(pack);
   } catch (e) {
     const message = e instanceof Error ? e.message : "Generation failed";
-    const status = message.includes("ANTHROPIC_API_KEY") ? 503 : 500;
+    const status =
+      message.includes("ANTHROPIC_API_KEY") ||
+      message.includes("NVIDIA_API_KEY") ||
+      message.includes("No LLM configured")
+        ? 503
+        : 500;
     return NextResponse.json({ error: message }, { status });
   }
 }

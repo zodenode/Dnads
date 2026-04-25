@@ -63,7 +63,7 @@ export function createNvidiaNimTextProvider(): LlmTextProvider {
     process.env.NVIDIA_CHAT_MODEL?.trim() || "meta/llama-3.1-8b-instruct";
   return {
     id: `nvidia-nim-chat:${model}`,
-    async completeChat({ messages, temperature = 0.3, max_tokens = 4096 }) {
+    async completeChat({ messages, temperature = 0.3, max_tokens = 8192 }) {
       const json = await postJson<ChatCompletionResponse>("/chat/completions", {
         model,
         messages: messagesToOpenAi(messages),
@@ -100,4 +100,21 @@ export function createNvidiaNimImageProvider(): ImageProvider {
       return rows.map((r) => ({ url: r.url, b64_json: r.b64_json }));
     },
   };
+}
+
+/** Single system + user turn for JSON pipelines (same as `callClaudeJson` consumer). */
+export async function nimCompleteSystemUser(
+  system: string,
+  user: string,
+  opts?: { max_tokens?: number; temperature?: number },
+): Promise<string> {
+  const p = createNvidiaNimTextProvider();
+  return p.completeChat({
+    messages: [
+      { role: "system", content: system },
+      { role: "user", content: user },
+    ],
+    temperature: opts?.temperature ?? 0.3,
+    max_tokens: opts?.max_tokens ?? 8192,
+  });
 }

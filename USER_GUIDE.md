@@ -13,7 +13,7 @@ Yes. Library integrations (Meta Ad Library, TikTok Research API, Google transpar
 ## What you get
 
 1. **Paste a website URL** → the app infers the business and competitors.
-2. **Per-competitor library mapping** (Claude) → sensible search terms / domains for Meta, TikTok, and Google (when keys exist).
+2. **Per-competitor library mapping** (Claude or NVIDIA NIM, same JSON contract) → sensible search terms / domains for Meta, TikTok, and Google (when keys exist).
 3. **Fetch public ad-library rows** → merged and deduped into one dataset.
 4. **Pattern analysis** → hook/angle mix, gaps, winning patterns.
 5. **Generated pack** → new ads, landing lines, UGC ideas, campaign names.
@@ -26,8 +26,9 @@ If few rows come back from APIs, **synthetic structured ads** pad the set so pat
 
 1. **Clone** the repo and checkout **`main`**.
 2. **Install:** `npm install`
-3. **Environment:** copy `.env.example` → `.env` and set at least:
-   - **`ANTHROPIC_API_KEY`** — required for generation and competitor mapping.
+3. **Environment:** copy `.env.example` → `.env` and set an LLM for generation:
+   - **`ANTHROPIC_API_KEY`** — Claude (used when set), **or**
+   - **`NVIDIA_API_KEY`** + **`NVIDIA_CHAT_MODEL`** — NVIDIA NIM on `integrate.api.nvidia.com` when Anthropic is not set.
    - **Clerk** — `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` and `CLERK_SECRET_KEY` (see Clerk Dashboard). Without them the app may not run as shipped; use your project’s Clerk instance.
 4. **Run:** `npm run dev` → open [http://localhost:3000](http://localhost:3000).
 

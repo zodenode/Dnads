@@ -6,7 +6,7 @@ Next.js app: one URL in, a structured **Growth Pack** out — inferred competito
 
 ```bash
 cp .env.example .env
-# Required: ANTHROPIC_API_KEY (for POST /api/generate)
+# LLM: ANTHROPIC_API_KEY (Claude) **or** NVIDIA_API_KEY + NVIDIA_CHAT_MODEL (NIM) for POST /api/generate
 # Required: NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY + CLERK_SECRET_KEY (Clerk Dashboard)
 # Optional library keys: META_ACCESS_TOKEN, TIKTOK_CLIENT_KEY + TIKTOK_CLIENT_SECRET, SERPAPI_API_KEY
 

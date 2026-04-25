@@ -1,6 +1,6 @@
 # Multimodal providers (NVIDIA + pluggable stack)
 
-The app’s **growth pipeline** still uses **Anthropic Claude** for business inference, mapping, and pack generation. This document describes the **separate provider layer** under `src/lib/providers/` for adding other modalities and **NVIDIA NIM** (free-tier prototyping on the API catalog).
+The app’s **growth pipeline** uses **`callClaudeJson` in `src/lib/claude.ts`**: if **`ANTHROPIC_API_KEY`** is set, requests go to **Claude**; otherwise if **`NVIDIA_API_KEY`** is set (and **`NVIDIA_CHAT_MODEL`** on the catalog), the same JSON steps run on **NVIDIA NIM** chat completions. This document also describes the **separate provider layer** under `src/lib/providers/` for images, ASR, and future modalities.
 
 > **Free ≠ unlimited.** NVIDIA’s hosted NIM endpoints on [build.nvidia.com](https://build.nvidia.com/) are intended for **developer prototyping** (rate limits / fair use). Production typically requires **NVIDIA AI Enterprise** or your own GPUs. Always read the current [NIM FAQ](https://forums.developer.nvidia.com/t/nvidia-nim-faq/300317) and catalog terms.
 
