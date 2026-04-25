@@ -14,6 +14,8 @@ npm install
 npm run dev
 ```
 
+**Tests:** `npm run test` (Vitest — JSON parsing, pattern analysis, LLM routing mocks, `/api/generate` contract).
+
 Open [http://localhost:3000](http://localhost:3000). **User guide (in-app):** [http://localhost:3000/guide](http://localhost:3000/guide) — content is loaded from [`USER_GUIDE.md`](./USER_GUIDE.md) at the repo root (edit that file to update the guide). Monitor UI: [http://localhost:3000/monitor](http://localhost:3000/monitor).
 
 ## Production hosting

@@ -1,15 +1,8 @@
 import Anthropic from "@anthropic-ai/sdk";
+import { parseJsonFromLlmText } from "./llm-json-parse";
 import { nimCompleteSystemUser } from "./providers/nvidia-nim";
 
 const CLAUDE_MODEL = "claude-sonnet-4-20250514";
-
-function parseJsonFromLlmText<T>(text: string): T {
-  const jsonMatch = text.match(/\{[\s\S]*\}/);
-  if (!jsonMatch) {
-    throw new Error("Model did not return parseable JSON");
-  }
-  return JSON.parse(jsonMatch[0]) as T;
-}
 
 /**
  * JSON structured LLM calls for the growth pipeline.
