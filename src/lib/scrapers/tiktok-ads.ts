@@ -8,12 +8,16 @@ const TIKTOK_AD_QUERY = "https://open.tiktokapis.com/v2/research/adlib/ad/query/
 
 let cachedToken: { token: string; expiresAt: number } | null = null;
 
-async function getClientAccessToken(): Promise<string | null> {
-  const key = process.env.TIKTOK_CLIENT_KEY?.trim();
-  const secret = process.env.TIKTOK_CLIENT_SECRET?.trim();
+async function getClientAccessToken(
+  overrideKey?: string | null,
+  overrideSecret?: string | null,
+): Promise<string | null> {
+  const key = (overrideKey ?? process.env.TIKTOK_CLIENT_KEY)?.trim();
+  const secret = (overrideSecret ?? process.env.TIKTOK_CLIENT_SECRET)?.trim();
   if (!key || !secret) return null;
 
-  if (cachedToken && cachedToken.expiresAt > Date.now() + 60_000) {
+  const useCache = !overrideKey && !overrideSecret;
+  if (useCache && cachedToken && cachedToken.expiresAt > Date.now() + 60_000) {
     return cachedToken.token;
   }
 
@@ -37,22 +41,31 @@ async function getClientAccessToken(): Promise<string | null> {
   };
 
   if (!res.ok || !json.access_token) {
-    cachedToken = null;
+    if (useCache) cachedToken = null;
     return null;
   }
 
   const ttlSec = typeof json.expires_in === "number" ? json.expires_in : 3600;
-  cachedToken = {
-    token: json.access_token,
-    expiresAt: Date.now() + ttlSec * 1000,
-  };
-  return cachedToken.token;
+  if (useCache) {
+    cachedToken = {
+      token: json.access_token,
+      expiresAt: Date.now() + ttlSec * 1000,
+    };
+    return cachedToken.token;
+  }
+  return json.access_token;
 }
 
 export function isTikTokConfigured(): boolean {
   return Boolean(
     process.env.TIKTOK_CLIENT_KEY?.trim() && process.env.TIKTOK_CLIENT_SECRET?.trim(),
   );
+}
+
+export function isTikTokConfiguredWithOptionalUser(auth?: TikTokAuthContext | null): boolean {
+  if (auth?.user_access_token?.trim()) return true;
+  if (auth?.client_key?.trim() && auth?.client_secret?.trim()) return true;
+  return isTikTokConfigured();
 }
 
 export type TikTokAdRow = {
@@ -97,12 +110,27 @@ export type FetchTikTokAdsParams = {
 const DEFAULT_FIELDS =
   "ad.id,ad.first_shown_date,ad.last_shown_date,ad.status,ad.videos,ad.image_urls,ad.reach,advertiser.business_id,advertiser.business_name,advertiser.paid_for_by";
 
+export type TikTokAuthContext = {
+  /** User OAuth access_token (Authorization Code) with research.adlib scopes */
+  user_access_token?: string | null;
+  /** Override app pair for token refresh / client_credentials */
+  client_key?: string | null;
+  client_secret?: string | null;
+};
+
 export async function fetchTikTokAds(
   params: FetchTikTokAdsParams,
+  auth?: TikTokAuthContext,
 ): Promise<{ rows: TikTokAdRow[]; search_id?: string; has_more?: boolean; error?: string }> {
-  const token = await getClientAccessToken();
+  const token =
+    auth?.user_access_token?.trim() ||
+    (await getClientAccessToken(auth?.client_key ?? null, auth?.client_secret ?? null));
   if (!token) {
-    return { rows: [], error: "TikTok client credentials not configured or token failed" };
+    return {
+      rows: [],
+      error:
+        "TikTok: connect account (OAuth) or set TIKTOK_CLIENT_KEY/SECRET for client_credentials",
+    };
   }
 
   const fields = process.env.TIKTOK_ADLIB_FIELDS?.trim() || DEFAULT_FIELDS;

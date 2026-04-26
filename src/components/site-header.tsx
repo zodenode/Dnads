@@ -29,7 +29,15 @@ function SiteHeaderClerk() {
           {!isLoaded ? (
             <span className="h-7 w-7 rounded-full bg-[#1a1b22]" aria-hidden />
           ) : isSignedIn ? (
-            <UserButton appearance={{ elements: { userButtonAvatarBox: "h-8 w-8" } }} />
+            <div className="flex items-center gap-3">
+              <Link
+                href="/settings/integrations"
+                className="text-[10px] font-normal uppercase tracking-[0.12em] text-[#6a6a6a] hover:text-[#9a9a9a]"
+              >
+                integrations
+              </Link>
+              <UserButton appearance={{ elements: { userButtonAvatarBox: "h-8 w-8" } }} />
+            </div>
           ) : (
             <SignInButton mode="modal" forceRedirectUrl="/results" signUpForceRedirectUrl="/results">
               <button

@@ -1,4 +1,6 @@
+import { auth } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
+import { isClerkMiddlewareEnabled } from "@/lib/clerk-config";
 import { listJobs, upsertJob } from "@/lib/job-store";
 
 export const dynamic = "force-dynamic";
@@ -28,7 +30,14 @@ export async function POST(req: Request) {
         : ["US"];
 
     const now = new Date().toISOString();
+    let clerk_user_id: string | null = null;
+    if (isClerkMiddlewareEnabled()) {
+      const { userId } = await auth();
+      clerk_user_id = userId;
+    }
+
     const job = await upsertJob({
+      clerk_user_id,
       url,
       meta_countries,
       max_competitors: maxCompetitors,

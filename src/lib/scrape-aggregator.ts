@@ -3,9 +3,11 @@
  */
 
 import type { CompetitorLibraryMapping } from "./types";
+import type { LibraryFetchContext } from "./scrapers/library-context";
+import { fetchBackupHtmlSnippets } from "./scrapers/library-html-backup";
 import { fetchGoogleTransparencyAds, isGoogleSerpConfigured } from "./scrapers/google-transparency";
-import { fetchMetaAdsArchive, isMetaConfigured } from "./scrapers/meta-ads";
-import { fetchTikTokAds, isTikTokConfigured } from "./scrapers/tiktok-ads";
+import { fetchMetaAdsArchive, isMetaConfiguredWithOptionalToken } from "./scrapers/meta-ads";
+import { fetchTikTokAds, isTikTokConfiguredWithOptionalUser } from "./scrapers/tiktok-ads";
 import {
   googleSerpItemsToAds,
   metaArchivedToAds,
@@ -22,6 +24,8 @@ export type ScrapeAggregatorOptions = {
   maxCompetitors?: number;
   metaMaxPages?: number;
   metaPerQueryLimit?: number;
+  /** User tokens from integrations store */
+  libraryContext?: LibraryFetchContext | null;
 };
 
 function dedupeAds(ads: Ad[]): Ad[] {
@@ -58,13 +62,22 @@ export async function aggregateLibraryAds(
   const tiktokDateMax = opts?.tiktokDateMax ?? range.max;
   const maxN = opts?.maxCompetitors ?? 10;
   const slice = mappings.slice(0, maxN);
+  const ctx = opts?.libraryContext;
 
-  const metaOk = isMetaConfigured();
-  const tikOk = isTikTokConfigured();
+  const metaOk = isMetaConfiguredWithOptionalToken(ctx?.meta_access_token ?? null);
+  const tikOk = isTikTokConfiguredWithOptionalUser({
+    user_access_token: ctx?.tiktok?.user_access_token,
+    client_key: ctx?.tiktok?.client_key,
+    client_secret: ctx?.tiktok?.client_secret,
+  });
   const googleOk = isGoogleSerpConfigured();
 
-  if (!metaOk) notes.push("Meta: skipped (META_ACCESS_TOKEN unset)");
-  if (!tikOk) notes.push("TikTok: skipped (TIKTOK_CLIENT_KEY/SECRET unset)");
+  if (!metaOk) notes.push("Meta: skipped (connect Meta in settings or set META_ACCESS_TOKEN)");
+  if (!tikOk) {
+    notes.push(
+      "TikTok: skipped (connect TikTok in settings or set TIKTOK_CLIENT_KEY/SECRET for client_credentials)",
+    );
+  }
   if (!googleOk) notes.push("Google: skipped (SERPAPI_API_KEY unset)");
 
   const all: Ad[] = [];
@@ -79,21 +92,29 @@ export async function aggregateLibraryAds(
         ad_reached_countries: metaCountries,
         limit: opts?.metaPerQueryLimit ?? 25,
         max_pages: opts?.metaMaxPages ?? 2,
+        access_token: ctx?.meta_access_token ?? undefined,
       });
       if (r.error) notes.push(`Meta (${label}): ${r.error}`);
       all.push(...metaArchivedToAds(r.ads));
     }
 
     if (tikOk && (m.tiktok?.search_term?.trim() || m.tiktok?.advertiser_business_ids?.length)) {
-      const r = await fetchTikTokAds({
-        search_term: m.tiktok?.search_term,
-        search_type: m.tiktok?.search_type,
-        country_code: opts?.tiktokCountry || "US",
-        date_min: tiktokDateMin,
-        date_max: tiktokDateMax,
-        max_count: 30,
-        advertiser_business_ids: m.tiktok?.advertiser_business_ids,
-      });
+      const r = await fetchTikTokAds(
+        {
+          search_term: m.tiktok?.search_term,
+          search_type: m.tiktok?.search_type,
+          country_code: opts?.tiktokCountry || "US",
+          date_min: tiktokDateMin,
+          date_max: tiktokDateMax,
+          max_count: 30,
+          advertiser_business_ids: m.tiktok?.advertiser_business_ids,
+        },
+        {
+          user_access_token: ctx?.tiktok?.user_access_token,
+          client_key: ctx?.tiktok?.client_key,
+          client_secret: ctx?.tiktok?.client_secret,
+        },
+      );
       if (r.error) notes.push(`TikTok (${label}): ${r.error}`);
       all.push(...tiktokRowsToAds(r.rows));
     }
@@ -109,5 +130,13 @@ export async function aggregateLibraryAds(
     }
   }
 
-  return { ads: dedupeAds(all), notes };
+  let merged = dedupeAds(all);
+
+  if (merged.length < 4 && process.env.BACKUP_HTML_FETCH === "1") {
+    const backup = await fetchBackupHtmlSnippets(slice, maxN);
+    notes.push(...backup.notes);
+    merged = dedupeAds([...merged, ...backup.ads]);
+  }
+
+  return { ads: merged, notes };
 }

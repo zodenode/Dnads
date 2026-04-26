@@ -1,4 +1,6 @@
+import { auth } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
+import { isClerkMiddlewareEnabled } from "@/lib/clerk-config";
 import { runPipeline } from "@/lib/pipeline";
 
 export const maxDuration = 120;
@@ -23,9 +25,16 @@ export async function POST(req: Request) {
         ? Math.min(20, body.max_competitors)
         : undefined;
 
+    let clerkUserId: string | null = null;
+    if (isClerkMiddlewareEnabled()) {
+      const { userId } = await auth();
+      clerkUserId = userId;
+    }
+
     const pack = await runPipeline(url, {
       metaCountries: meta_countries,
       maxCompetitors: max_competitors,
+      clerkUserId,
     });
     return NextResponse.json(pack);
   } catch (e) {

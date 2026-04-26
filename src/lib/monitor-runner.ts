@@ -19,6 +19,7 @@ export async function runMonitorJobOnce(jobId: string): Promise<void> {
     const pack = await runPipeline(job.url, {
       metaCountries: job.meta_countries,
       maxCompetitors: job.max_competitors,
+      clerkUserId: job.clerk_user_id ?? null,
     });
 
     await upsertJob({

@@ -8,6 +8,8 @@ import path from "path";
 
 export type MonitorJob = {
   id: string;
+  /** When set, cron runs pipeline with this user's Meta/TikTok integrations */
+  clerk_user_id?: string | null;
   url: string;
   /** ISO country codes for Meta */
   meta_countries: string[];
@@ -67,6 +69,7 @@ export async function upsertJob(
   const idx = jobs.findIndex((j) => j.id === id);
   const next: MonitorJob = {
     id,
+    clerk_user_id: partial.clerk_user_id ?? (idx >= 0 ? jobs[idx].clerk_user_id : null),
     url: partial.url,
     meta_countries: partial.meta_countries ?? ["US"],
     max_competitors: partial.max_competitors ?? 8,

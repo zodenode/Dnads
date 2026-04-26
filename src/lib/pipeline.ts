@@ -9,12 +9,16 @@ import { callClaudeJson } from "./claude";
 import { fetchUrlSignals } from "./competitor-analysis";
 import { parseGeneratedAds, validateGrowthPackShape } from "./generation-engine";
 import { analyzePatterns } from "./pattern-analysis";
+import { decryptMetaToken, decryptTikTokTokens, loadUserIntegrations } from "./integrations/store";
 import { aggregateLibraryAds } from "./scrape-aggregator";
+import type { LibraryFetchContext } from "./scrapers/library-context";
 import type { Ad, AdSource, Business, GrowthPack } from "./types";
 
 export type PipelineOptions = {
   metaCountries?: string[];
   maxCompetitors?: number;
+  /** Clerk user id — loads encrypted Meta/TikTok tokens from integrations store */
+  clerkUserId?: string | null;
 };
 
 type Phase1Out = {
@@ -179,9 +183,25 @@ export async function runPipeline(
     product_summary: business.product_summary,
   });
 
+  let libraryContext: LibraryFetchContext | undefined;
+  if (options?.clerkUserId) {
+    const rec = await loadUserIntegrations(options.clerkUserId);
+    const metaTok = decryptMetaToken(rec);
+    const tt = decryptTikTokTokens(rec);
+    libraryContext = {
+      meta_access_token: metaTok,
+      tiktok: {
+        user_access_token: tt.access,
+        client_key: tt.clientKey ?? process.env.TIKTOK_CLIENT_KEY?.trim() ?? null,
+        client_secret: tt.clientSecret ?? process.env.TIKTOK_CLIENT_SECRET?.trim() ?? null,
+      },
+    };
+  }
+
   const { ads: scraped, notes } = await aggregateLibraryAds(intel.mappings, {
     metaCountries: options?.metaCountries ?? ["US"],
     maxCompetitors: options?.maxCompetitors ?? 10,
+    libraryContext,
   });
 
   let competitor_ads = scraped;

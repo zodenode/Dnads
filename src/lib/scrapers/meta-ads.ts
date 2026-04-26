@@ -44,6 +44,10 @@ export function isMetaConfigured(): boolean {
   return Boolean(getToken());
 }
 
+export function isMetaConfiguredWithOptionalToken(userToken?: string | null): boolean {
+  return Boolean(userToken?.trim() || getToken());
+}
+
 export type FetchMetaAdsParams = {
   search_terms?: string;
   search_page_ids?: string[];
@@ -51,14 +55,16 @@ export type FetchMetaAdsParams = {
   ad_active_status?: "ACTIVE" | "ALL" | "INACTIVE";
   limit?: number;
   max_pages?: number;
+  /** Per-user token from Meta Login (overrides env META_ACCESS_TOKEN) */
+  access_token?: string;
 };
 
 export async function fetchMetaAdsArchive(
   params: FetchMetaAdsParams,
 ): Promise<{ ads: MetaArchivedAd[]; error?: string }> {
-  const token = getToken();
+  const token = params.access_token?.trim() || getToken();
   if (!token) {
-    return { ads: [], error: "META_ACCESS_TOKEN not set" };
+    return { ads: [], error: "META_ACCESS_TOKEN not set (connect Meta or set server env)" };
   }
   const countries = params.ad_reached_countries.length
     ? params.ad_reached_countries
