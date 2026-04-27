@@ -1,0 +1,62 @@
+@import "tailwindcss";
+
+:root {
+  --background: #0a0a0b;
+  --foreground: #f4f4f5;
+  --muted: #a1a1aa;
+  --accent: #22d3ee;
+  --card: #18181b;
+  --border: #27272a;
+}
+
+body {
+  color: var(--foreground);
+  background: var(--background);
+  font-family: var(--font-geist-sans), system-ui, sans-serif;
+}
+
+@keyframes dnads-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.animate-dnads-fade-in {
+  animation: dnads-fade-in 0.9s ease-out forwards;
+}
+
+.animate-dnads-fade-in-delay-1 {
+  animation: dnads-fade-in 0.9s ease-out 0.15s forwards;
+  opacity: 0;
+}
+
+.animate-dnads-fade-in-delay-2 {
+  animation: dnads-fade-in 0.9s ease-out 0.45s forwards;
+  opacity: 0;
+}
+
+.animate-dnads-fade-in-delay-3 {
+  animation: dnads-fade-in 0.9s ease-out 0.65s forwards;
+  opacity: 0;
+}
+
+.animate-dnads-fade-in-delay-4 {
+  animation: dnads-fade-in 0.9s ease-out 0.85s forwards;
+  opacity: 0;
+}
+
+/* If the browser suppresses animations (reduced motion / some tunnel clients), do not
+   leave content stuck at opacity: 0 — that reads as a blank page. */
+@media (prefers-reduced-motion: reduce) {
+  .animate-dnads-fade-in,
+  .animate-dnads-fade-in-delay-1,
+  .animate-dnads-fade-in-delay-2,
+  .animate-dnads-fade-in-delay-3,
+  .animate-dnads-fade-in-delay-4 {
+    animation: none !important;
+    opacity: 1 !important;
+  }
+}

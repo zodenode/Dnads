@@ -1,0 +1,15 @@
+node_modules
+.next
+.git
+.github
+*.md
+!USER_GUIDE.md
+.env
+.env.*
+!.env.example
+data
+cloudflared
+npm-debug.log*
+.DS_Store
+coverage
+*.tsbuildinfo
